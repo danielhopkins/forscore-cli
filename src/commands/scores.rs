@@ -44,6 +44,7 @@ pub fn handle(cmd: ScoresCommand) -> Result<()> {
         }
 
         ScoresCommand::Search {
+            query,
             title,
             composer,
             genre,
@@ -66,6 +67,7 @@ pub fn handle(cmd: ScoresCommand) -> Result<()> {
 
             let mut scores = search_scores(
                 &conn,
+                query.as_deref(),
                 title.as_deref(),
                 composer.as_deref(),
                 genre.as_deref(),

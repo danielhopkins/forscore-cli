@@ -111,7 +111,9 @@ pub enum ScoresCommand {
     },
     /// Search scores
     Search {
-        /// Search by title
+        /// Search query (matches title or composer)
+        query: Option<String>,
+        /// Search by title only
         #[arg(long)]
         title: Option<String>,
         /// Search by composer

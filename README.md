@@ -33,6 +33,8 @@ forscore scores ls                      # List scores
 forscore scores ls --library "Jazz"     # Filter by library
 forscore scores ls --setlist "Gig"      # Filter by setlist
 forscore scores ls --sort modified --desc
+forscore scores search "Op 28"          # Search title or composer
+forscore scores search --title "Prelude"
 forscore scores search --composer "Bach"
 forscore scores search --key "C Major"
 forscore scores search --no-rating      # Find unrated scores

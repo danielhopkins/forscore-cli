@@ -303,6 +303,7 @@ pub fn resolve_score(conn: &Connection, identifier: &str) -> Result<Score> {
 /// Search scores with filters
 pub fn search_scores(
     conn: &Connection,
+    query: Option<&str>,
     title: Option<&str>,
     composer: Option<&str>,
     genre: Option<&str>,
@@ -328,10 +329,22 @@ pub fn search_scores(
     };
     let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
 
-    if composer.is_some() {
-        joins.push("JOIN Z_4COMPOSERS c ON i.Z_PK = c.Z_4ITEMS1 JOIN ZMETA mc ON c.Z_10COMPOSERS = mc.Z_PK");
+    // General query searches both title and composer
+    let needs_composer_join = query.is_some() || composer.is_some();
+    if needs_composer_join {
+        joins.push("LEFT JOIN Z_4COMPOSERS c ON i.Z_PK = c.Z_4ITEMS1 LEFT JOIN ZMETA mc ON c.Z_10COMPOSERS = mc.Z_PK");
+    }
+
+    if let Some(q) = query {
+        conditions.push("(i.ZTITLE LIKE ? OR mc.ZVALUE LIKE ?)".to_string());
+        let pattern = format!("%{}%", q);
+        params.push(Box::new(pattern.clone()));
+        params.push(Box::new(pattern));
+    }
+
+    if let Some(c) = composer {
         conditions.push("mc.ZVALUE LIKE ?".to_string());
-        params.push(Box::new(format!("%{}%", composer.unwrap())));
+        params.push(Box::new(format!("%{}%", c)));
     }
 
     if genre.is_some() {
