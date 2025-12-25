@@ -4,6 +4,7 @@ version = "1.0.0"
 edition = "2021"
 description = "CLI tool for managing forScore metadata"
 authors = ["Dan Hopkins"]
+license = "MIT"
 
 [[bin]]
 name = "forscore"
