@@ -5,14 +5,14 @@ A command-line tool for managing [forScore](https://forscore.co) metadata on mac
 ## Installation
 
 ```bash
-cargo install --path .
+brew tap danielhopkins/formulae
+brew install forscore-cli
 ```
 
-Or build manually:
+Or build from source:
 
 ```bash
-cargo build --release
-# Binary at target/release/forscore
+cargo install --path .
 ```
 
 ## Requirements
