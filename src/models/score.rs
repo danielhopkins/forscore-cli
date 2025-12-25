@@ -337,7 +337,9 @@ pub fn search_scores(
 
     if let Some(q) = query {
         conditions.push("(i.ZTITLE LIKE ? OR mc.ZVALUE LIKE ?)".to_string());
-        let pattern = format!("%{}%", q);
+        // Split on whitespace and join with % to match "Op 28" -> "Op. 28"
+        let words: Vec<&str> = q.split_whitespace().collect();
+        let pattern = format!("%{}%", words.join("%"));
         params.push(Box::new(pattern.clone()));
         params.push(Box::new(pattern));
     }

@@ -4,7 +4,11 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(cargo build:*)"
+      "Bash(cargo build:*)",
+      "Bash(cargo install:*)",
+      "Bash(forscore scores search --help:*)",
+      "Bash(~/.cargo/bin/forscore scores search:*)",
+      "Bash(make install:*)"
     ]
   }
 }
