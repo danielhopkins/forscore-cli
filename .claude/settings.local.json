@@ -8,7 +8,22 @@
       "Bash(cargo install:*)",
       "Bash(forscore scores search --help:*)",
       "Bash(~/.cargo/bin/forscore scores search:*)",
-      "Bash(make install:*)"
+      "Bash(make install:*)",
+      "Bash(git tag:*)",
+      "Bash(curl:*)",
+      "Bash(shasum:*)",
+      "Bash(forscore --version:*)",
+      "Bash(gh repo view:*)",
+      "Bash(gh repo edit:*)",
+      "Bash(gh auth token --help:*)",
+      "Bash(gh help:*)",
+      "Bash(gh api --help:*)",
+      "Bash(gh auth:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh api:*)",
+      "WebSearch",
+      "Bash(brew info:*)",
+      "Bash(git pull:*)"
     ]
   }
 }

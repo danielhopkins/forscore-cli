@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build release binary
+        run: cargo build --release
+
+      - name: Create tarball
+        run: |
+          cd target/release
+          tar -czf forscore-macos-arm64.tar.gz forscore
+          shasum -a 256 forscore-macos-arm64.tar.gz > forscore-macos-arm64.tar.gz.sha256
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            target/release/forscore-macos-arm64.tar.gz
+            target/release/forscore-macos-arm64.tar.gz.sha256
+
+  update-homebrew:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update formula
+        uses: mislav/bump-homebrew-formula-action@v3
+        with:
+          formula-name: forscore-cli
+          homebrew-tap: danielhopkins/homebrew-formulae
+          download-url: https://github.com/danielhopkins/forscore-cli/releases/download/${{ github.ref_name }}/forscore-macos-arm64.tar.gz
+        env:
+          COMMITTER_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
