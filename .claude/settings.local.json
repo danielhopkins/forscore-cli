@@ -23,7 +23,8 @@
       "Bash(gh api:*)",
       "WebSearch",
       "Bash(brew info:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(gh run view:*)"
     ]
   }
 }
