@@ -47,6 +47,8 @@ fn run() -> error::Result<()> {
             Some(SyncCommand::Log { limit }) => commands::utils::sync_log(limit)?,
             Some(SyncCommand::Trigger) => commands::utils::sync_trigger()?,
         },
+
+        Commands::Fixes { command } => commands::fixes::handle(command)?,
     }
 
     Ok(())

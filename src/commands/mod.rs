@@ -1,5 +1,6 @@
 pub mod bookmarks;
 pub mod export;
+pub mod fixes;
 pub mod import;
 pub mod libraries;
 pub mod metadata;

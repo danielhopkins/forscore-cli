@@ -69,6 +69,11 @@ pub enum Commands {
         #[command(subcommand)]
         command: Option<SyncCommand>,
     },
+    /// Fix common issues in the library
+    Fixes {
+        #[command(subcommand)]
+        command: FixesCommand,
+    },
 }
 
 #[derive(Subcommand)]
@@ -405,5 +410,15 @@ pub enum BookmarksCommand {
     Delete {
         /// Bookmark ID
         id: i64,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum FixesCommand {
+    /// Find and remove duplicate bookmarks (keeps older, removes newer)
+    DuplicateBookmarks {
+        /// Preview changes without applying
+        #[arg(long)]
+        dry_run: bool,
     },
 }

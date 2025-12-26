@@ -32,7 +32,8 @@
       "Bash(brew install:*)",
       "Bash(brew update:*)",
       "Bash(cargo fix:*)",
-      "Bash(cargo fmt:*)"
+      "Bash(cargo fmt:*)",
+      "Bash(./target/release/forscore fixes:*)"
     ]
   }
 }
