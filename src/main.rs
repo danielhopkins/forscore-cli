@@ -5,6 +5,7 @@ mod error;
 mod itm;
 mod models;
 mod output;
+mod setlist_sync;
 
 use clap::Parser;
 use cli::{Cli, Commands, SyncCommand};
