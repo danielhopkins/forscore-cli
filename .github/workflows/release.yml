@@ -34,6 +34,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
       - name: Update formula
         uses: mislav/bump-homebrew-formula-action@v3
         with:
@@ -42,3 +46,17 @@ jobs:
           download-url: https://github.com/danielhopkins/forscore-cli/releases/download/${{ github.ref_name }}/forscore-macos-arm64.tar.gz
         env:
           COMMITTER_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+      - name: Ensure version in formula
+        run: |
+          git clone https://${{ secrets.HOMEBREW_TAP_TOKEN }}@github.com/danielhopkins/homebrew-formulae.git
+          cd homebrew-formulae/Formula
+          # Add version line if missing, or update if present
+          if grep -q '^  version' forscore-cli.rb; then
+            sed -i 's/^  version.*/  version "${{ steps.version.outputs.version }}"/' forscore-cli.rb
+          else
+            sed -i '/^  url/a\  version "${{ steps.version.outputs.version }}"' forscore-cli.rb
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet || (git add . && git commit -m "Ensure version ${{ steps.version.outputs.version }} in formula" && git push)
