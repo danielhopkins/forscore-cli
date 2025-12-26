@@ -131,10 +131,19 @@ pub fn handle(cmd: SetlistsCommand) -> Result<()> {
             let conn = open_readwrite()?;
             let sl = resolve_setlist(&conn, &setlist)?;
             let sc = resolve_score(&conn, &score)?;
+
+            // Get the UUID from ZCYLON before deleting (this is what's in the sync file)
+            let identifier: String = conn
+                .query_row(
+                    "SELECT ZUUID FROM ZCYLON WHERE ZSETLIST = ? AND ZITEM = ?",
+                    [sl.id, sc.id],
+                    |row| row.get(0),
+                )
+                .unwrap_or_default();
+
             remove_score_from_setlist(&conn, sl.id, sc.id)?;
 
             // Update sync file
-            let identifier = sc.uuid.clone().unwrap_or_default();
             match remove_item_from_setlist_file(&sl.title, &identifier) {
                 Ok(true) => println!("Removed '{}' from setlist '{}' + sync file", sc.title, sl.title),
                 Ok(false) => println!("Removed '{}' from setlist '{}' (not in sync file)", sc.title, sl.title),
@@ -157,18 +166,27 @@ pub fn handle(cmd: SetlistsCommand) -> Result<()> {
             reorder_score_in_setlist(&conn, sl.id, sc.id, position)?;
 
             // Rebuild sync file with new order from database
+            // Query scores with their UUIDs from ZCYLON (the join table)
             let scores = list_scores_in_setlist(&conn, sl.id)?;
-            let items: Vec<SetlistItem> = scores
-                .iter()
-                .map(|s| SetlistItem {
+            let mut items: Vec<SetlistItem> = Vec::with_capacity(scores.len());
+            for s in &scores {
+                // Get UUID from ZCYLON - this is what's stored in sync files
+                let identifier: String = conn
+                    .query_row(
+                        "SELECT ZUUID FROM ZCYLON WHERE ZSETLIST = ? AND ZITEM = ?",
+                        [sl.id, s.id],
+                        |row| row.get(0),
+                    )
+                    .unwrap_or_default();
+                items.push(SetlistItem {
                     file_path: s.path.clone(),
                     title: s.title.clone(),
-                    identifier: s.uuid.clone().unwrap_or_else(|| uuid::Uuid::new_v4().to_string().to_uppercase()),
+                    identifier,
                     is_bookmark: false,
                     first_page: None,
                     last_page: None,
-                })
-                .collect();
+                });
+            }
 
             match reorder_setlist_file(&sl.title, &items) {
                 Ok(true) => println!(

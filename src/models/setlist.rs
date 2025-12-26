@@ -276,7 +276,7 @@ pub fn reorder_score_in_setlist(
         conn.execute(
             "INSERT INTO ZCYLON (Z_PK, Z_ENT, Z_OPT, ZSETLIST, ZITEM, Z4_ITEM, ZSHUFFLE, ZUUID)
              VALUES (?, 2, 1, ?, ?, ?, 0, ?)",
-            rusqlite::params![max_base + 1 + i as i64, setlist_id, item_id, item_id, uuid],
+            rusqlite::params![max_base + 1 + i as i64, setlist_id, item_id, entity::SCORE, uuid],
         )?;
     }
 
