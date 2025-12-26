@@ -34,7 +34,8 @@ pub fn handle(cmd: ImportCommand) -> Result<()> {
             let rating_idx = headers.iter().position(|h| h == "rating");
             let difficulty_idx = headers.iter().position(|h| h == "difficulty");
 
-            let id_idx = id_idx.ok_or_else(|| ForScoreError::Other("CSV must have 'id' column".into()))?;
+            let id_idx =
+                id_idx.ok_or_else(|| ForScoreError::Other("CSV must have 'id' column".into()))?;
 
             let mut updated = 0;
             let mut errors = 0;
@@ -140,10 +141,7 @@ pub fn handle(cmd: ImportCommand) -> Result<()> {
                                 println!("  composer = {}", composer);
                             } else {
                                 let composer_id = get_or_create_composer(&conn, composer)?;
-                                conn.execute(
-                                    "DELETE FROM Z_4COMPOSERS WHERE Z_4ITEMS1 = ?",
-                                    [id],
-                                )?;
+                                conn.execute("DELETE FROM Z_4COMPOSERS WHERE Z_4ITEMS1 = ?", [id])?;
                                 conn.execute(
                                     "INSERT INTO Z_4COMPOSERS (Z_4ITEMS1, Z_10COMPOSERS) VALUES (?, ?)",
                                     [id, composer_id],
@@ -161,10 +159,7 @@ pub fn handle(cmd: ImportCommand) -> Result<()> {
                                 println!("  genre = {}", genre);
                             } else {
                                 let genre_id = get_or_create_genre(&conn, genre)?;
-                                conn.execute(
-                                    "DELETE FROM Z_4GENRES WHERE Z_4ITEMS4 = ?",
-                                    [id],
-                                )?;
+                                conn.execute("DELETE FROM Z_4GENRES WHERE Z_4ITEMS4 = ?", [id])?;
                                 conn.execute(
                                     "INSERT INTO Z_4GENRES (Z_4ITEMS4, Z_12GENRES) VALUES (?, ?)",
                                     [id, genre_id],
@@ -183,7 +178,10 @@ pub fn handle(cmd: ImportCommand) -> Result<()> {
             }
 
             if dry_run {
-                println!("\nDry run complete. Would update {} scores ({} errors)", updated, errors);
+                println!(
+                    "\nDry run complete. Would update {} scores ({} errors)",
+                    updated, errors
+                );
             } else {
                 println!("Updated {} scores ({} errors)", updated, errors);
             }

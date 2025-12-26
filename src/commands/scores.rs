@@ -3,19 +3,26 @@ use crate::db::{mark_modified, open_readonly, open_readwrite, warn_if_running};
 use crate::error::Result;
 use crate::itm::{update_itm, ItmUpdate};
 use crate::models::key::MusicalKey;
-use crate::models::score::{
-    list_scores, list_scores_in_library, list_scores_in_setlist,
-    resolve_score, search_scores,
-};
-use crate::models::setlist::resolve_setlist;
 use crate::models::library::resolve_library;
 use crate::models::meta::{get_or_create_composer, get_or_create_genre};
+use crate::models::score::{
+    list_scores, list_scores_in_library, list_scores_in_setlist, resolve_score, search_scores,
+};
+use crate::models::setlist::resolve_setlist;
 use crate::output::{output, output_score};
 use std::process::Command;
 
 pub fn handle(cmd: ScoresCommand) -> Result<()> {
     match cmd {
-        ScoresCommand::Ls { library, setlist, limit, sort, desc, scores_only, json } => {
+        ScoresCommand::Ls {
+            library,
+            setlist,
+            limit,
+            sort,
+            desc,
+            scores_only,
+            json,
+        } => {
             let conn = open_readonly()?;
 
             let is_filtered = setlist.is_some() || library.is_some();
@@ -99,10 +106,7 @@ pub fn handle(cmd: ScoresCommand) -> Result<()> {
             let score = resolve_score(&conn, &identifier)?;
 
             // Use forScore URL scheme
-            let url = format!(
-                "forscore://open?path={}",
-                urlencoding::encode(&score.path)
-            );
+            let url = format!("forscore://open?path={}", urlencoding::encode(&score.path));
 
             Command::new("open").arg(&url).spawn()?;
             println!("Opening {} in forScore...", score.title);
@@ -171,11 +175,7 @@ pub fn handle(cmd: ScoresCommand) -> Result<()> {
                     return Err(crate::error::ForScoreError::InvalidRating(r));
                 }
                 if dry_run {
-                    println!(
-                        "  Rating: {} -> {}",
-                        score.rating.unwrap_or(0),
-                        r
-                    );
+                    println!("  Rating: {} -> {}", score.rating.unwrap_or(0), r);
                 } else {
                     conn.execute(
                         "UPDATE ZITEM SET ZRATING = ? WHERE Z_PK = ?",
@@ -190,11 +190,7 @@ pub fn handle(cmd: ScoresCommand) -> Result<()> {
                     return Err(crate::error::ForScoreError::InvalidDifficulty(d));
                 }
                 if dry_run {
-                    println!(
-                        "  Difficulty: {} -> {}",
-                        score.difficulty.unwrap_or(0),
-                        d
-                    );
+                    println!("  Difficulty: {} -> {}", score.difficulty.unwrap_or(0), d);
                 } else {
                     conn.execute(
                         "UPDATE ZITEM SET ZDIFFICULTY = ? WHERE Z_PK = ?",
@@ -215,10 +211,7 @@ pub fn handle(cmd: ScoresCommand) -> Result<()> {
                     let composer_id = get_or_create_composer(&conn, composer_name)?;
 
                     // Remove existing composer links
-                    conn.execute(
-                        "DELETE FROM Z_4COMPOSERS WHERE Z_4ITEMS1 = ?",
-                        [score.id],
-                    )?;
+                    conn.execute("DELETE FROM Z_4COMPOSERS WHERE Z_4ITEMS1 = ?", [score.id])?;
 
                     // Add new link
                     conn.execute(
@@ -240,10 +233,7 @@ pub fn handle(cmd: ScoresCommand) -> Result<()> {
                     let genre_id = get_or_create_genre(&conn, genre_name)?;
 
                     // Remove existing genre links
-                    conn.execute(
-                        "DELETE FROM Z_4GENRES WHERE Z_4ITEMS4 = ?",
-                        [score.id],
-                    )?;
+                    conn.execute("DELETE FROM Z_4GENRES WHERE Z_4ITEMS4 = ?", [score.id])?;
 
                     // Add new link
                     conn.execute(

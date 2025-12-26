@@ -26,7 +26,10 @@ pub fn handle(cmd: SetlistsCommand) -> Result<()> {
                 score.load_metadata(&conn)?;
             }
 
-            println!("Setlist: {} ({} scores)\n", setlist.title, setlist.score_count);
+            println!(
+                "Setlist: {} ({} scores)\n",
+                setlist.title, setlist.score_count
+            );
             output(&scores, json);
         }
 
@@ -37,7 +40,10 @@ pub fn handle(cmd: SetlistsCommand) -> Result<()> {
             println!("Created setlist '{}' (ID: {})", setlist.title, setlist.id);
         }
 
-        SetlistsCommand::Rename { identifier, new_name } => {
+        SetlistsCommand::Rename {
+            identifier,
+            new_name,
+        } => {
             warn_if_running();
             let conn = open_readwrite()?;
             let setlist = resolve_setlist(&conn, &identifier)?;
@@ -71,13 +77,20 @@ pub fn handle(cmd: SetlistsCommand) -> Result<()> {
             println!("Removed '{}' from setlist '{}'", sc.title, sl.title);
         }
 
-        SetlistsCommand::Reorder { setlist, score, position } => {
+        SetlistsCommand::Reorder {
+            setlist,
+            score,
+            position,
+        } => {
             warn_if_running();
             let conn = open_readwrite()?;
             let sl = resolve_setlist(&conn, &setlist)?;
             let sc = resolve_score(&conn, &score)?;
             reorder_score_in_setlist(&conn, sl.id, sc.id, position)?;
-            println!("Moved '{}' to position {} in '{}'", sc.title, position, sl.title);
+            println!(
+                "Moved '{}' to position {} in '{}'",
+                sc.title, position, sl.title
+            );
         }
     }
 

@@ -134,11 +134,9 @@ pub fn create_setlist(conn: &Connection, name: &str) -> Result<Setlist> {
     let uuid = uuid::Uuid::new_v4().to_string().to_uppercase();
 
     // Get max Z_PK and Z_OPT
-    let max_pk: i64 = conn.query_row(
-        "SELECT COALESCE(MAX(Z_PK), 0) FROM ZSETLIST",
-        [],
-        |row| row.get(0),
-    )?;
+    let max_pk: i64 = conn.query_row("SELECT COALESCE(MAX(Z_PK), 0) FROM ZSETLIST", [], |row| {
+        row.get(0)
+    })?;
 
     // Get entity info
     let z_ent = entity::SETLIST;
@@ -199,11 +197,9 @@ pub fn add_score_to_setlist(conn: &Connection, setlist_id: i64, score_id: i64) -
     }
 
     // Get max Z_PK for ordering
-    let max_pk: i64 = conn.query_row(
-        "SELECT COALESCE(MAX(Z_PK), 0) FROM ZCYLON",
-        [],
-        |row| row.get(0),
-    )?;
+    let max_pk: i64 = conn.query_row("SELECT COALESCE(MAX(Z_PK), 0) FROM ZCYLON", [], |row| {
+        row.get(0)
+    })?;
 
     let uuid = uuid::Uuid::new_v4().to_string().to_uppercase();
 
@@ -233,9 +229,8 @@ pub fn reorder_score_in_setlist(
     new_position: usize,
 ) -> Result<()> {
     // Get all scores in current order
-    let mut stmt = conn.prepare(
-        "SELECT Z_PK, ZITEM FROM ZCYLON WHERE ZSETLIST = ? ORDER BY Z_PK",
-    )?;
+    let mut stmt =
+        conn.prepare("SELECT Z_PK, ZITEM FROM ZCYLON WHERE ZSETLIST = ? ORDER BY Z_PK")?;
 
     let members: Vec<(i64, i64)> = stmt
         .query_map([setlist_id], |row| Ok((row.get(0)?, row.get(1)?)))?
@@ -252,11 +247,9 @@ pub fn reorder_score_in_setlist(
     }
 
     // Reorder by deleting and re-inserting with new Z_PK values
-    let max_base: i64 = conn.query_row(
-        "SELECT COALESCE(MAX(Z_PK), 0) FROM ZCYLON",
-        [],
-        |row| row.get(0),
-    )?;
+    let max_base: i64 = conn.query_row("SELECT COALESCE(MAX(Z_PK), 0) FROM ZCYLON", [], |row| {
+        row.get(0)
+    })?;
 
     // Build new order
     let mut new_order: Vec<i64> = members.iter().map(|(_, id)| *id).collect();

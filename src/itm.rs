@@ -17,7 +17,8 @@ use std::path::PathBuf;
 pub fn sync_folder_path() -> Result<PathBuf> {
     let home = dirs::home_dir()
         .ok_or_else(|| ForScoreError::Other("Cannot find home directory".into()))?;
-    let path = home.join("Library/Containers/com.mgsdevelopment.forscore/Data/Library/Preferences/Sync");
+    let path =
+        home.join("Library/Containers/com.mgsdevelopment.forscore/Data/Library/Preferences/Sync");
 
     if path.exists() {
         Ok(path)
@@ -237,7 +238,11 @@ pub fn delete_bookmark_from_itm(pdf_path: &str, bookmark_uuid: Option<&str>) -> 
 }
 
 /// Update a bookmark within an ITM file
-pub fn update_bookmark_in_itm(pdf_path: &str, bookmark_uuid: Option<&str>, update: &ItmBookmarkUpdate) -> Result<bool> {
+pub fn update_bookmark_in_itm(
+    pdf_path: &str,
+    bookmark_uuid: Option<&str>,
+    update: &ItmBookmarkUpdate,
+) -> Result<bool> {
     if update.is_empty() {
         return Ok(false);
     }

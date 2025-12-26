@@ -1,8 +1,8 @@
 use serde::Serialize;
 use tabled::{Table, Tabled};
 
-use crate::models::{Composer, Genre, Keyword, Library, Score, Setlist};
 use crate::models::score::Bookmark;
+use crate::models::{Composer, Genre, Keyword, Library, Score, Setlist};
 
 /// Output format helper
 pub fn output<T: Serialize + ToTable>(items: &[T], json: bool) {

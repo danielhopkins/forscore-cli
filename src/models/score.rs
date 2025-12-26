@@ -95,7 +95,13 @@ impl Score {
 }
 
 /// List all scores with sorting and limit
-pub fn list_scores(conn: &Connection, sort: &str, desc: bool, limit: usize, scores_only: bool) -> Result<Vec<Score>> {
+pub fn list_scores(
+    conn: &Connection,
+    sort: &str,
+    desc: bool,
+    limit: usize,
+    scores_only: bool,
+) -> Result<Vec<Score>> {
     let order_col = match sort {
         "title" => "i.ZSORTTITLE",
         "added" => "i.ZADDED",
@@ -127,13 +133,19 @@ pub fn list_scores(conn: &Connection, sort: &str, desc: bool, limit: usize, scor
     let mut stmt = conn.prepare(&sql)?;
 
     let scores: Vec<Score> = if scores_only {
-        stmt.query_map(rusqlite::params![entity::SCORE, limit as i64], Score::from_row)?
-            .filter_map(|r| r.ok())
-            .collect()
+        stmt.query_map(
+            rusqlite::params![entity::SCORE, limit as i64],
+            Score::from_row,
+        )?
+        .filter_map(|r| r.ok())
+        .collect()
     } else {
-        stmt.query_map(rusqlite::params![entity::SCORE, entity::BOOKMARK, limit as i64], Score::from_row)?
-            .filter_map(|r| r.ok())
-            .collect()
+        stmt.query_map(
+            rusqlite::params![entity::SCORE, entity::BOOKMARK, limit as i64],
+            Score::from_row,
+        )?
+        .filter_map(|r| r.ok())
+        .collect()
     };
 
     Ok(scores)
@@ -161,7 +173,10 @@ pub fn list_scores_in_setlist(conn: &Connection, setlist_id: i64) -> Result<Vec<
     )?;
 
     let scores: Vec<Score> = stmt
-        .query_map([setlist_id, entity::BOOKMARK as i64, entity::SCORE as i64], Score::from_row)?
+        .query_map(
+            [setlist_id, entity::BOOKMARK as i64, entity::SCORE as i64],
+            Score::from_row,
+        )?
         .filter_map(|r| r.ok())
         .collect();
 
@@ -325,7 +340,11 @@ pub fn search_scores(
     let mut conditions = if scores_only {
         vec![format!("i.Z_ENT = {}", entity::SCORE)]
     } else {
-        vec![format!("i.Z_ENT IN ({}, {})", entity::SCORE, entity::BOOKMARK)]
+        vec![format!(
+            "i.Z_ENT IN ({}, {})",
+            entity::SCORE,
+            entity::BOOKMARK
+        )]
     };
     let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
 
@@ -350,7 +369,9 @@ pub fn search_scores(
     }
 
     if genre.is_some() {
-        joins.push("JOIN Z_4GENRES g ON i.Z_PK = g.Z_4ITEMS4 JOIN ZMETA mg ON g.Z_12GENRES = mg.Z_PK");
+        joins.push(
+            "JOIN Z_4GENRES g ON i.Z_PK = g.Z_4ITEMS4 JOIN ZMETA mg ON g.Z_12GENRES = mg.Z_PK",
+        );
         conditions.push("mg.ZVALUE2 LIKE ?".to_string());
         params.push(Box::new(format!("%{}%", genre.unwrap())));
     }
@@ -489,7 +510,8 @@ pub fn get_bookmark_by_id(conn: &Connection, id: i64) -> Result<Bookmark> {
          WHERE i.Z_PK = ? AND i.Z_ENT = ?",
     )?;
 
-    let key_code: Option<i32> = stmt.query_row([id, entity::BOOKMARK as i64], |row| row.get("ZKEY"))?;
+    let key_code: Option<i32> =
+        stmt.query_row([id, entity::BOOKMARK as i64], |row| row.get("ZKEY"))?;
 
     let mut bookmark = stmt.query_row([id, entity::BOOKMARK as i64], |row| {
         Ok(Bookmark {

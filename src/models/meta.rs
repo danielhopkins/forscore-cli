@@ -99,10 +99,7 @@ pub fn merge_composers(conn: &Connection, source_name: &str, target_name: &str) 
     )?;
 
     // Delete source composer
-    conn.execute(
-        "DELETE FROM ZMETA WHERE Z_PK = ?",
-        [source.id],
-    )?;
+    conn.execute("DELETE FROM ZMETA WHERE Z_PK = ?", [source.id])?;
 
     Ok(())
 }
@@ -163,11 +160,9 @@ pub fn get_or_create_composer(conn: &Connection, name: &str) -> Result<i64> {
     }
 
     // Create new
-    let max_pk: i64 = conn.query_row(
-        "SELECT COALESCE(MAX(Z_PK), 0) FROM ZMETA",
-        [],
-        |row| row.get(0),
-    )?;
+    let max_pk: i64 = conn.query_row("SELECT COALESCE(MAX(Z_PK), 0) FROM ZMETA", [], |row| {
+        row.get(0)
+    })?;
 
     conn.execute(
         "INSERT INTO ZMETA (Z_PK, Z_ENT, Z_OPT, ZVALUE) VALUES (?, ?, 1, ?)",
@@ -186,20 +181,18 @@ pub fn get_or_create_composer(conn: &Connection, name: &str) -> Result<i64> {
 /// Get or create a genre, returning its ID
 pub fn get_or_create_genre(conn: &Connection, name: &str) -> Result<i64> {
     // Try to find existing
-    let mut stmt = conn.prepare(
-        "SELECT Z_PK FROM ZMETA WHERE Z_ENT = ? AND ZVALUE2 = ?",
-    )?;
+    let mut stmt = conn.prepare("SELECT Z_PK FROM ZMETA WHERE Z_ENT = ? AND ZVALUE2 = ?")?;
 
-    if let Ok(id) = stmt.query_row(rusqlite::params![entity::GENRE, name], |row| row.get::<_, i64>(0)) {
+    if let Ok(id) = stmt.query_row(rusqlite::params![entity::GENRE, name], |row| {
+        row.get::<_, i64>(0)
+    }) {
         return Ok(id);
     }
 
     // Create new
-    let max_pk: i64 = conn.query_row(
-        "SELECT COALESCE(MAX(Z_PK), 0) FROM ZMETA",
-        [],
-        |row| row.get(0),
-    )?;
+    let max_pk: i64 = conn.query_row("SELECT COALESCE(MAX(Z_PK), 0) FROM ZMETA", [], |row| {
+        row.get(0)
+    })?;
 
     conn.execute(
         "INSERT INTO ZMETA (Z_PK, Z_ENT, Z_OPT, ZVALUE2) VALUES (?, ?, 1, ?)",

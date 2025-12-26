@@ -12,7 +12,8 @@ const FORSCORE_CONTAINER: &str =
 
 /// Get the path to the forScore database
 pub fn database_path() -> Result<PathBuf> {
-    let home = dirs::home_dir().ok_or_else(|| ForScoreError::Other("Cannot find home directory".into()))?;
+    let home = dirs::home_dir()
+        .ok_or_else(|| ForScoreError::Other("Cannot find home directory".into()))?;
     let path = home.join(FORSCORE_CONTAINER);
 
     if path.exists() {
@@ -34,7 +35,9 @@ pub fn is_forscore_running() -> bool {
 /// Print a warning if forScore is running
 pub fn warn_if_running() {
     if is_forscore_running() {
-        eprintln!("WARNING: forScore is currently running. Changes may conflict or be overwritten.");
+        eprintln!(
+            "WARNING: forScore is currently running. Changes may conflict or be overwritten."
+        );
         eprintln!("         Consider closing forScore before making modifications.\n");
     }
 }

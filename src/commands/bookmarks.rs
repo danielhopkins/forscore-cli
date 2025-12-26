@@ -121,11 +121,7 @@ pub fn handle(cmd: BookmarksCommand) -> Result<()> {
                     return Err(crate::error::ForScoreError::InvalidRating(r));
                 }
                 if dry_run {
-                    println!(
-                        "  Rating: {} -> {}",
-                        bookmark.rating.unwrap_or(0),
-                        r
-                    );
+                    println!("  Rating: {} -> {}", bookmark.rating.unwrap_or(0), r);
                 } else {
                     conn.execute(
                         "UPDATE ZITEM SET ZRATING = ? WHERE Z_PK = ?",
@@ -190,10 +186,7 @@ pub fn handle(cmd: BookmarksCommand) -> Result<()> {
                     let genre_id = get_or_create_genre(&conn, genre_name)?;
 
                     // Remove existing genre links
-                    conn.execute(
-                        "DELETE FROM Z_4GENRES WHERE Z_4ITEMS4 = ?",
-                        [bookmark.id],
-                    )?;
+                    conn.execute("DELETE FROM Z_4GENRES WHERE Z_4ITEMS4 = ?", [bookmark.id])?;
 
                     // Add new link
                     conn.execute(

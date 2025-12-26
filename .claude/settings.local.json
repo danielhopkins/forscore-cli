@@ -31,7 +31,8 @@
       "Bash(brew tap:*)",
       "Bash(brew install:*)",
       "Bash(brew update:*)",
-      "Bash(cargo fix:*)"
+      "Bash(cargo fix:*)",
+      "Bash(cargo fmt:*)"
     ]
   }
 }

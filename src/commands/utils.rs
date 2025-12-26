@@ -9,53 +9,35 @@ use std::process::Command;
 pub fn info() -> Result<()> {
     let conn = open_readonly()?;
 
-    let score_count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM ZITEM WHERE Z_ENT = 6",
-        [],
-        |row| row.get(0),
-    )?;
+    let score_count: i64 =
+        conn.query_row("SELECT COUNT(*) FROM ZITEM WHERE Z_ENT = 6", [], |row| {
+            row.get(0)
+        })?;
 
-    let bookmark_count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM ZITEM WHERE Z_ENT = 5",
-        [],
-        |row| row.get(0),
-    )?;
+    let bookmark_count: i64 =
+        conn.query_row("SELECT COUNT(*) FROM ZITEM WHERE Z_ENT = 5", [], |row| {
+            row.get(0)
+        })?;
 
-    let setlist_count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM ZSETLIST",
-        [],
-        |row| row.get(0),
-    )?;
+    let setlist_count: i64 =
+        conn.query_row("SELECT COUNT(*) FROM ZSETLIST", [], |row| row.get(0))?;
 
-    let library_count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM ZLIBRARY",
-        [],
-        |row| row.get(0),
-    )?;
+    let library_count: i64 =
+        conn.query_row("SELECT COUNT(*) FROM ZLIBRARY", [], |row| row.get(0))?;
 
-    let composer_count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM ZMETA WHERE Z_ENT = 10",
-        [],
-        |row| row.get(0),
-    )?;
+    let composer_count: i64 =
+        conn.query_row("SELECT COUNT(*) FROM ZMETA WHERE Z_ENT = 10", [], |row| {
+            row.get(0)
+        })?;
 
-    let genre_count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM ZMETA WHERE Z_ENT = 12",
-        [],
-        |row| row.get(0),
-    )?;
+    let genre_count: i64 =
+        conn.query_row("SELECT COUNT(*) FROM ZMETA WHERE Z_ENT = 12", [], |row| {
+            row.get(0)
+        })?;
 
-    let page_count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM ZPAGE",
-        [],
-        |row| row.get(0),
-    )?;
+    let page_count: i64 = conn.query_row("SELECT COUNT(*) FROM ZPAGE", [], |row| row.get(0))?;
 
-    let track_count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM ZTRACK",
-        [],
-        |row| row.get(0),
-    )?;
+    let track_count: i64 = conn.query_row("SELECT COUNT(*) FROM ZTRACK", [], |row| row.get(0))?;
 
     // Scores with ratings
     let rated_count: i64 = conn.query_row(
@@ -98,9 +80,21 @@ pub fn info() -> Result<()> {
     println!("  Tracks:     {:>6}", track_count);
     println!();
     println!("Scores with metadata:");
-    println!("  With rating:     {:>6} ({:.1}%)", rated_count, 100.0 * rated_count as f64 / score_count as f64);
-    println!("  With difficulty: {:>6} ({:.1}%)", difficulty_count, 100.0 * difficulty_count as f64 / score_count as f64);
-    println!("  With key:        {:>6} ({:.1}%)", key_count, 100.0 * key_count as f64 / score_count as f64);
+    println!(
+        "  With rating:     {:>6} ({:.1}%)",
+        rated_count,
+        100.0 * rated_count as f64 / score_count as f64
+    );
+    println!(
+        "  With difficulty: {:>6} ({:.1}%)",
+        difficulty_count,
+        100.0 * difficulty_count as f64 / score_count as f64
+    );
+    println!(
+        "  With key:        {:>6} ({:.1}%)",
+        key_count,
+        100.0 * key_count as f64 / score_count as f64
+    );
 
     Ok(())
 }
@@ -200,7 +194,11 @@ pub fn sync_status() -> Result<()> {
                 "just now".to_string()
             };
 
-            println!("Last Sync:    {} ({})", local_time.format("%Y-%m-%d %H:%M:%S"), ago);
+            println!(
+                "Last Sync:    {} ({})",
+                local_time.format("%Y-%m-%d %H:%M:%S"),
+                ago
+            );
         } else {
             println!("Last Sync:    {}", date_str);
         }
@@ -240,8 +238,7 @@ pub fn sync_log(limit: usize) -> Result<()> {
     let json_str = String::from_utf8_lossy(&output.stdout);
 
     // Parse JSON array
-    let entries: Vec<serde_json::Value> = serde_json::from_str(&json_str)
-        .unwrap_or_default();
+    let entries: Vec<serde_json::Value> = serde_json::from_str(&json_str).unwrap_or_default();
 
     if entries.is_empty() {
         println!("No sync entries found");
@@ -257,9 +254,7 @@ pub fn sync_log(limit: usize) -> Result<()> {
             let size = e.get("fileSize")?.as_i64().unwrap_or(0);
 
             // Clean up path - remove {%SYNC_DIR%}/ prefix and URL decode
-            let clean_path = path
-                .strip_prefix("{%SYNC_DIR%}/")
-                .unwrap_or(path);
+            let clean_path = path.strip_prefix("{%SYNC_DIR%}/").unwrap_or(path);
             let decoded = urlencoding::decode(clean_path)
                 .unwrap_or_else(|_| clean_path.into())
                 .to_string();
@@ -271,8 +266,11 @@ pub fn sync_log(limit: usize) -> Result<()> {
     // Sort by modification time descending (most recent first)
     sync_entries.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
 
-    println!("Recent Sync Activity (showing {} of {} entries)",
-             limit.min(sync_entries.len()), sync_entries.len());
+    println!(
+        "Recent Sync Activity (showing {} of {} entries)",
+        limit.min(sync_entries.len()),
+        sync_entries.len()
+    );
     println!("{}", "=".repeat(60));
     println!();
 
@@ -317,9 +315,7 @@ pub fn sync_log(limit: usize) -> Result<()> {
 /// Trigger a sync via UI automation
 pub fn sync_trigger() -> Result<()> {
     // First check if forScore is running
-    let check = Command::new("pgrep")
-        .args(["-x", "forScore"])
-        .output()?;
+    let check = Command::new("pgrep").args(["-x", "forScore"]).output()?;
 
     if !check.status.success() {
         eprintln!("forScore is not running. Please start forScore first.");
@@ -362,14 +358,13 @@ return "ok"
 
     println!("Triggering forScore sync...");
 
-    let output = Command::new("osascript")
-        .arg("-e")
-        .arg(script)
-        .output()?;
+    let output = Command::new("osascript").arg("-e").arg(script).output()?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        if stderr.contains("not allowed assistive access") || stderr.contains("not allowed to send keystrokes") {
+        if stderr.contains("not allowed assistive access")
+            || stderr.contains("not allowed to send keystrokes")
+        {
             eprintln!("Error: Accessibility permissions required.");
             eprintln!();
             eprintln!("To enable, go to:");

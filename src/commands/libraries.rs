@@ -25,7 +25,10 @@ pub fn handle(cmd: LibrariesCommand) -> Result<()> {
                 score.load_metadata(&conn)?;
             }
 
-            println!("Library: {} ({} scores)\n", library.title, library.score_count);
+            println!(
+                "Library: {} ({} scores)\n",
+                library.title, library.score_count
+            );
             output(&scores, json);
         }
 

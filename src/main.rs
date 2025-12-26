@@ -42,13 +42,11 @@ fn run() -> error::Result<()> {
 
         Commands::Backup { output } => commands::utils::backup(output)?,
 
-        Commands::Sync { command } => {
-            match command {
-                None => commands::utils::sync_status()?,
-                Some(SyncCommand::Log { limit }) => commands::utils::sync_log(limit)?,
-                Some(SyncCommand::Trigger) => commands::utils::sync_trigger()?,
-            }
-        }
+        Commands::Sync { command } => match command {
+            None => commands::utils::sync_status()?,
+            Some(SyncCommand::Log { limit }) => commands::utils::sync_log(limit)?,
+            Some(SyncCommand::Trigger) => commands::utils::sync_trigger()?,
+        },
     }
 
     Ok(())
