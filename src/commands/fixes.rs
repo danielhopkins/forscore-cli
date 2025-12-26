@@ -6,15 +6,15 @@ use rusqlite::Connection;
 
 pub fn handle(cmd: FixesCommand) -> Result<()> {
     match cmd {
-        FixesCommand::DuplicateBookmarks { dry_run } => {
-            if !dry_run {
+        FixesCommand::DuplicateBookmarks { apply } => {
+            if apply {
                 warn_if_running();
             }
 
-            let conn = if dry_run {
-                open_readonly()?
-            } else {
+            let conn = if apply {
                 open_readwrite()?
+            } else {
+                open_readonly()?
             };
 
             let duplicates = find_duplicate_bookmarks(&conn)?;
@@ -34,14 +34,14 @@ pub fn handle(cmd: FixesCommand) -> Result<()> {
                 println!("    Duplicate of ID {} (keeping older)", dup.original_id);
             }
 
-            if dry_run {
-                println!("\nDry run - no changes made. Remove --dry-run to delete duplicates.");
-            } else {
+            if apply {
                 println!();
                 for dup in &duplicates {
                     delete_bookmark(&conn, dup)?;
                 }
                 println!("\nDeleted {} duplicate bookmark(s).", duplicates.len());
+            } else {
+                println!("\nRun with --apply to delete duplicates.");
             }
         }
     }

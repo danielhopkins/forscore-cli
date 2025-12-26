@@ -417,8 +417,8 @@ pub enum BookmarksCommand {
 pub enum FixesCommand {
     /// Find and remove duplicate bookmarks (keeps older, removes newer)
     DuplicateBookmarks {
-        /// Preview changes without applying
+        /// Actually delete the duplicates
         #[arg(long)]
-        dry_run: bool,
+        apply: bool,
     },
 }
