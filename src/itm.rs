@@ -9,8 +9,7 @@ use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use plist::Value;
-use std::collections::BTreeMap;
-use std::fs::{self, File};
+use std::fs::File;
 use std::io::{Read, Write};
 use std::path::PathBuf;
 
@@ -153,14 +152,6 @@ pub fn update_itm(pdf_path: &str, update: &ItmUpdate) -> Result<bool> {
     write_itm(&itm_path, &Value::Dictionary(dict))?;
 
     Ok(true)
-}
-
-/// Check if an ITM file exists for a score
-pub fn itm_exists(pdf_path: &str) -> bool {
-    match itm_path_for_score(pdf_path) {
-        Ok(path) => path.exists(),
-        Err(_) => false,
-    }
 }
 
 /// Update fields for a bookmark in an ITM file

@@ -1,6 +1,6 @@
 use crate::db::{database_path, open_readonly};
 use crate::error::Result;
-use chrono::{DateTime, Local, TimeZone, Utc};
+use chrono::{DateTime, Local};
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;

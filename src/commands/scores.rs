@@ -4,13 +4,13 @@ use crate::error::Result;
 use crate::itm::{update_itm, ItmUpdate};
 use crate::models::key::MusicalKey;
 use crate::models::score::{
-    get_score_by_id, list_bookmarks, list_scores, list_scores_in_library, list_scores_in_setlist,
+    list_scores, list_scores_in_library, list_scores_in_setlist,
     resolve_score, search_scores,
 };
 use crate::models::setlist::resolve_setlist;
 use crate::models::library::resolve_library;
 use crate::models::meta::{get_or_create_composer, get_or_create_genre};
-use crate::output::{output, output_score, ToTable};
+use crate::output::{output, output_score};
 use std::process::Command;
 
 pub fn handle(cmd: ScoresCommand) -> Result<()> {
@@ -280,20 +280,6 @@ pub fn handle(cmd: ScoresCommand) -> Result<()> {
                 }
             }
         }
-    }
-
-    Ok(())
-}
-
-pub fn handle_bookmarks(score_identifier: &str, json: bool) -> Result<()> {
-    let conn = open_readonly()?;
-    let score = resolve_score(&conn, score_identifier)?;
-    let bookmarks = list_bookmarks(&conn, score.id)?;
-
-    if bookmarks.is_empty() {
-        println!("No bookmarks in '{}'", score.title);
-    } else {
-        output(&bookmarks, json);
     }
 
     Ok(())

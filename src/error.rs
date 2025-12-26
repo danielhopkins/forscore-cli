@@ -17,9 +17,6 @@ pub enum ForScoreError {
     #[error("Composer not found: {0}")]
     ComposerNotFound(String),
 
-    #[error("Genre not found: {0}")]
-    GenreNotFound(String),
-
     #[error("Ambiguous identifier '{0}': matches multiple items")]
     AmbiguousIdentifier(String),
 

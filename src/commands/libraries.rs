@@ -5,7 +5,7 @@ use crate::models::library::{
     add_score_to_library, list_libraries, remove_score_from_library, resolve_library,
 };
 use crate::models::score::{list_scores_in_library, resolve_score};
-use crate::output::{output, ToTable};
+use crate::output::output;
 
 pub fn handle(cmd: LibrariesCommand) -> Result<()> {
     match cmd {

@@ -6,7 +6,7 @@ use crate::models::setlist::{
     add_score_to_setlist, create_setlist, delete_setlist, list_setlists, remove_score_from_setlist,
     rename_setlist, reorder_score_in_setlist, resolve_setlist,
 };
-use crate::output::{output, ToTable};
+use crate::output::output;
 
 pub fn handle(cmd: SetlistsCommand) -> Result<()> {
     match cmd {

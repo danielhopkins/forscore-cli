@@ -58,20 +58,13 @@ pub fn open_readwrite() -> Result<Connection> {
 
 /// Entity type constants from Z_PRIMARYKEY
 pub mod entity {
-    pub const ITEM: i32 = 4;
     pub const BOOKMARK: i32 = 5;
     pub const SCORE: i32 = 6;
-    pub const LIBRARY: i32 = 7;
     pub const META: i32 = 9;
     pub const COMPOSER: i32 = 10;
-    pub const DIFFICULTY: i32 = 11;
     pub const GENRE: i32 = 12;
     pub const KEYWORD: i32 = 13;
-    pub const LABEL: i32 = 14;
-    pub const RATING: i32 = 15;
-    pub const PAGE: i32 = 16;
     pub const SETLIST: i32 = 19;
-    pub const TRACK: i32 = 22;
 }
 
 /// Get current timestamp in Core Data format (seconds since 2001-01-01)

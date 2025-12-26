@@ -1,7 +1,7 @@
 use serde::Serialize;
 use tabled::{Table, Tabled};
 
-use crate::models::{Composer, Genre, Keyword, Label, Library, Score, Setlist};
+use crate::models::{Composer, Genre, Keyword, Library, Score, Setlist};
 use crate::models::score::Bookmark;
 
 /// Output format helper
@@ -10,15 +10,6 @@ pub fn output<T: Serialize + ToTable>(items: &[T], json: bool) {
         println!("{}", serde_json::to_string_pretty(items).unwrap());
     } else {
         println!("{}", T::to_table(items));
-    }
-}
-
-/// Output single item
-pub fn output_one<T: Serialize + std::fmt::Debug>(item: &T, json: bool) {
-    if json {
-        println!("{}", serde_json::to_string_pretty(item).unwrap());
-    } else {
-        println!("{:#?}", item);
     }
 }
 
@@ -224,20 +215,6 @@ impl ToTable for Keyword {
                 id: k.id,
                 name: k.name.clone(),
                 score_count: k.score_count,
-            })
-            .collect();
-        Table::new(rows).to_string()
-    }
-}
-
-impl ToTable for Label {
-    fn to_table(items: &[Self]) -> String {
-        let rows: Vec<KeywordRow> = items
-            .iter()
-            .map(|l| KeywordRow {
-                id: l.id,
-                name: l.name.clone(),
-                score_count: l.score_count,
             })
             .collect();
         Table::new(rows).to_string()

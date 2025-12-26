@@ -1,4 +1,4 @@
-use crate::db::{entity, open_readonly};
+use crate::db::entity;
 use crate::error::{ForScoreError, Result};
 use crate::models::key::MusicalKey;
 use rusqlite::{Connection, Row};

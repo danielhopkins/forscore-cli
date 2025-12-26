@@ -4,7 +4,7 @@ use crate::error::Result;
 use crate::models::meta::{
     list_composers, list_genres, list_keywords, merge_composers, rename_composer,
 };
-use crate::output::{output, ToTable};
+use crate::output::output;
 
 pub fn handle_composers(cmd: ComposersCommand) -> Result<()> {
     match cmd {

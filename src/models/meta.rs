@@ -24,13 +24,6 @@ pub struct Keyword {
     pub score_count: i32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Label {
-    pub id: i64,
-    pub name: String,
-    pub score_count: i32,
-}
-
 /// List all composers
 pub fn list_composers(conn: &Connection, unused_only: bool) -> Result<Vec<Composer>> {
     let sql = if unused_only {
@@ -160,30 +153,6 @@ pub fn list_keywords(conn: &Connection, unused_only: bool) -> Result<Vec<Keyword
         .collect();
 
     Ok(keywords)
-}
-
-/// List all labels
-pub fn list_labels(conn: &Connection, unused_only: bool) -> Result<Vec<Label>> {
-    let sql = "SELECT m.Z_PK, m.ZVALUE,
-                (SELECT COUNT(*) FROM Z_4LABELS l WHERE l.Z_14LABELS = m.Z_PK) as score_count
-         FROM ZMETA m WHERE m.Z_ENT = ?
-         ORDER BY m.ZVALUE";
-
-    let mut stmt = conn.prepare(sql)?;
-
-    let labels: Vec<Label> = stmt
-        .query_map([entity::LABEL], |row| {
-            Ok(Label {
-                id: row.get("Z_PK")?,
-                name: row.get::<_, Option<String>>("ZVALUE")?.unwrap_or_default(),
-                score_count: row.get("score_count")?,
-            })
-        })?
-        .filter_map(|r| r.ok())
-        .filter(|l| !unused_only || l.score_count == 0)
-        .collect();
-
-    Ok(labels)
 }
 
 /// Get or create a composer, returning its ID
