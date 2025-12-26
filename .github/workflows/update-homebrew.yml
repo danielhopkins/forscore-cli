@@ -1,0 +1,16 @@
+name: Update Homebrew Formula
+on:
+  release:
+    types: [published]
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update formula
+        uses: mislav/bump-homebrew-formula-action@v3
+        with:
+          formula-name: forscore-cli
+          homebrew-tap: danielhopkins/homebrew-formulae
+        env:
+          COMMITTER_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
