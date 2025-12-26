@@ -9,10 +9,11 @@ use crate::itm::sync_folder_path;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
-use plist::{Dictionary, Value};
+use plist::{Date, Dictionary, Value};
 use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::path::PathBuf;
+use std::time::SystemTime;
 
 /// URL-encode a setlist name for the filename
 fn encode_setlist_name(name: &str) -> String {
@@ -88,6 +89,11 @@ pub fn create_setlist_file(name: &str) -> Result<bool> {
     dict.insert("title".to_string(), Value::String(name.to_string()));
     dict.insert("items".to_string(), Value::Array(vec![]));
     dict.insert("menuIndex".to_string(), Value::Integer(0.into()));
+    // Include lastPlayed for better compatibility with forScore's sync
+    dict.insert(
+        "lastPlayed".to_string(),
+        Value::Date(Date::from(SystemTime::now())),
+    );
     dict.insert(
         "kRecoverableDestination".to_string(),
         Value::Integer(4.into()),
