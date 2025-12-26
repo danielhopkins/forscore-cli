@@ -237,6 +237,73 @@ pub fn delete_bookmark_from_itm(pdf_path: &str, bookmark_uuid: Option<&str>) -> 
     Ok(true)
 }
 
+/// Rename a composer across all ITM files (both score-level and bookmark-level)
+/// Returns (files_modified, score_fixes, bookmark_fixes)
+pub fn rename_composer_in_all_itm(old_name: &str, new_name: &str) -> Result<(usize, usize, usize)> {
+    let sync_folder = sync_folder_path()?;
+
+    let mut files_modified = 0;
+    let mut score_fixes = 0;
+    let mut bookmark_fixes = 0;
+
+    // Iterate over all ITM files
+    let entries = std::fs::read_dir(&sync_folder)
+        .map_err(|e| ForScoreError::Other(format!("Cannot read sync folder: {}", e)))?;
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|s| s.to_str()) != Some("itm") {
+            continue;
+        }
+
+        let value = match read_itm(&path) {
+            Ok(v) => v,
+            Err(_) => continue, // Skip unreadable files
+        };
+
+        let mut dict = match value {
+            Value::Dictionary(d) => d,
+            _ => continue,
+        };
+
+        let mut modified = false;
+
+        // Fix score-level composer (lowercase key)
+        if let Some(Value::String(composer)) = dict.get("composer") {
+            if composer == old_name {
+                dict.insert("composer".to_string(), Value::String(new_name.to_string()));
+                score_fixes += 1;
+                modified = true;
+            }
+        }
+
+        // Fix bookmark-level Composer (capitalized key)
+        if let Some(Value::Array(bookmarks)) = dict.get_mut("bookmarks") {
+            for bookmark in bookmarks.iter_mut() {
+                if let Value::Dictionary(ref mut bm_dict) = bookmark {
+                    if let Some(Value::String(composer)) = bm_dict.get("Composer") {
+                        if composer == old_name {
+                            bm_dict.insert(
+                                "Composer".to_string(),
+                                Value::String(new_name.to_string()),
+                            );
+                            bookmark_fixes += 1;
+                            modified = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        if modified {
+            write_itm(&path, &Value::Dictionary(dict))?;
+            files_modified += 1;
+        }
+    }
+
+    Ok((files_modified, score_fixes, bookmark_fixes))
+}
+
 /// Update a bookmark within an ITM file
 pub fn update_bookmark_in_itm(
     pdf_path: &str,
