@@ -201,12 +201,22 @@ pub fn add_score_to_setlist(conn: &Connection, setlist_id: i64, score_id: i64) -
         row.get(0)
     })?;
 
-    let uuid = uuid::Uuid::new_v4().to_string().to_uppercase();
+    // Try to reuse UUID if this score is already in another setlist
+    let existing_uuid: Option<String> = conn
+        .query_row(
+            "SELECT ZUUID FROM ZCYLON WHERE ZITEM = ? AND ZUUID IS NOT NULL LIMIT 1",
+            [score_id],
+            |row| row.get(0),
+        )
+        .ok();
 
+    let uuid = existing_uuid.unwrap_or_else(|| uuid::Uuid::new_v4().to_string().to_uppercase());
+
+    // Z4_ITEM should be the entity type (6 for Score), not the score ID
     conn.execute(
         "INSERT INTO ZCYLON (Z_PK, Z_ENT, Z_OPT, ZSETLIST, ZITEM, Z4_ITEM, ZSHUFFLE, ZUUID)
          VALUES (?, 2, 1, ?, ?, ?, 0, ?)",
-        rusqlite::params![max_pk + 1, setlist_id, score_id, score_id, uuid],
+        rusqlite::params![max_pk + 1, setlist_id, score_id, entity::SCORE, uuid],
     )?;
 
     Ok(())

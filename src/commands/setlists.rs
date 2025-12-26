@@ -99,11 +99,19 @@ pub fn handle(cmd: SetlistsCommand) -> Result<()> {
             let sc = resolve_score(&conn, &score)?;
             add_score_to_setlist(&conn, sl.id, sc.id)?;
 
-            // Update sync file
+            // Get the UUID that was used (either reused or newly generated)
+            let identifier: String = conn
+                .query_row(
+                    "SELECT ZUUID FROM ZCYLON WHERE ZSETLIST = ? AND ZITEM = ?",
+                    [sl.id, sc.id],
+                    |row| row.get(0),
+                )
+                .unwrap_or_default();
+
             let item = SetlistItem {
                 file_path: sc.path.clone(),
                 title: sc.title.clone(),
-                identifier: sc.uuid.clone().unwrap_or_default(),
+                identifier,
                 is_bookmark: false,
                 first_page: None,
                 last_page: None,
@@ -155,7 +163,7 @@ pub fn handle(cmd: SetlistsCommand) -> Result<()> {
                 .map(|s| SetlistItem {
                     file_path: s.path.clone(),
                     title: s.title.clone(),
-                    identifier: s.uuid.clone().unwrap_or_default(),
+                    identifier: s.uuid.clone().unwrap_or_else(|| uuid::Uuid::new_v4().to_string().to_uppercase()),
                     is_bookmark: false,
                     first_page: None,
                     last_page: None,
