@@ -222,6 +222,49 @@ pub fn add_score_to_setlist(conn: &Connection, setlist_id: i64, score_id: i64) -
     Ok(())
 }
 
+/// Add an item (score or bookmark) to a setlist with specified entity type
+pub fn add_item_to_setlist(
+    conn: &Connection,
+    setlist_id: i64,
+    item_id: i64,
+    entity_type: i32,
+) -> Result<()> {
+    // Check if already in setlist
+    let exists: bool = conn.query_row(
+        "SELECT EXISTS(SELECT 1 FROM ZCYLON WHERE ZSETLIST = ? AND ZITEM = ?)",
+        [setlist_id, item_id],
+        |row| row.get(0),
+    )?;
+
+    if exists {
+        return Ok(()); // Already in setlist
+    }
+
+    // Get max Z_PK for ordering
+    let max_pk: i64 = conn.query_row("SELECT COALESCE(MAX(Z_PK), 0) FROM ZCYLON", [], |row| {
+        row.get(0)
+    })?;
+
+    // Try to reuse UUID if this item is already in another setlist
+    let existing_uuid: Option<String> = conn
+        .query_row(
+            "SELECT ZUUID FROM ZCYLON WHERE ZITEM = ? AND ZUUID IS NOT NULL LIMIT 1",
+            [item_id],
+            |row| row.get(0),
+        )
+        .ok();
+
+    let uuid = existing_uuid.unwrap_or_else(|| uuid::Uuid::new_v4().to_string().to_uppercase());
+
+    conn.execute(
+        "INSERT INTO ZCYLON (Z_PK, Z_ENT, Z_OPT, ZSETLIST, ZITEM, Z4_ITEM, ZSHUFFLE, ZUUID)
+         VALUES (?, 2, 1, ?, ?, ?, 0, ?)",
+        rusqlite::params![max_pk + 1, setlist_id, item_id, entity_type, uuid],
+    )?;
+
+    Ok(())
+}
+
 /// Remove a score from a setlist
 pub fn remove_score_from_setlist(conn: &Connection, setlist_id: i64, score_id: i64) -> Result<()> {
     conn.execute(
@@ -238,17 +281,17 @@ pub fn reorder_score_in_setlist(
     score_id: i64,
     new_position: usize,
 ) -> Result<()> {
-    // Get all scores in current order
+    // Get all items in current order with their entity types
     let mut stmt =
-        conn.prepare("SELECT Z_PK, ZITEM FROM ZCYLON WHERE ZSETLIST = ? ORDER BY Z_PK")?;
+        conn.prepare("SELECT Z_PK, ZITEM, Z4_ITEM FROM ZCYLON WHERE ZSETLIST = ? ORDER BY Z_PK")?;
 
-    let members: Vec<(i64, i64)> = stmt
-        .query_map([setlist_id], |row| Ok((row.get(0)?, row.get(1)?)))?
+    let members: Vec<(i64, i64, i32)> = stmt
+        .query_map([setlist_id], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?
         .filter_map(|r| r.ok())
         .collect();
 
     // Find current position
-    let current_pos = members.iter().position(|(_, id)| *id == score_id);
+    let current_pos = members.iter().position(|(_, id, _)| *id == score_id);
     if current_pos.is_none() {
         return Err(ForScoreError::Other(format!(
             "Score {} not in setlist {}",
@@ -261,8 +304,8 @@ pub fn reorder_score_in_setlist(
         row.get(0)
     })?;
 
-    // Build new order
-    let mut new_order: Vec<i64> = members.iter().map(|(_, id)| *id).collect();
+    // Build new order (item_id, entity_type)
+    let mut new_order: Vec<(i64, i32)> = members.iter().map(|(_, id, ent)| (*id, *ent)).collect();
     let removed = new_order.remove(current_pos.unwrap());
     let insert_pos = (new_position - 1).min(new_order.len());
     new_order.insert(insert_pos, removed);
@@ -270,13 +313,13 @@ pub fn reorder_score_in_setlist(
     // Delete all memberships for this setlist
     conn.execute("DELETE FROM ZCYLON WHERE ZSETLIST = ?", [setlist_id])?;
 
-    // Re-insert in new order
-    for (i, item_id) in new_order.iter().enumerate() {
+    // Re-insert in new order, preserving entity types
+    for (i, (item_id, entity_type)) in new_order.iter().enumerate() {
         let uuid = uuid::Uuid::new_v4().to_string().to_uppercase();
         conn.execute(
             "INSERT INTO ZCYLON (Z_PK, Z_ENT, Z_OPT, ZSETLIST, ZITEM, Z4_ITEM, ZSHUFFLE, ZUUID)
              VALUES (?, 2, 1, ?, ?, ?, 0, ?)",
-            rusqlite::params![max_base + 1 + i as i64, setlist_id, item_id, entity::SCORE, uuid],
+            rusqlite::params![max_base + 1 + i as i64, setlist_id, item_id, entity_type, uuid],
         )?;
     }
 

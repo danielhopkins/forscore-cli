@@ -1,10 +1,10 @@
 use crate::cli::SetlistsCommand;
-use crate::db::{open_readonly, open_readwrite, warn_if_running};
+use crate::db::{entity, open_readonly, open_readwrite, warn_if_running};
 use crate::error::Result;
-use crate::models::score::{list_scores_in_setlist, resolve_score};
+use crate::models::score::{list_scores_in_setlist, resolve_bookmark, resolve_score};
 use crate::models::setlist::{
-    add_score_to_setlist, create_setlist, delete_setlist, list_setlists, remove_score_from_setlist,
-    rename_setlist, reorder_score_in_setlist, resolve_setlist,
+    add_item_to_setlist, add_score_to_setlist, create_setlist, delete_setlist, list_setlists,
+    remove_score_from_setlist, rename_setlist, reorder_score_in_setlist, resolve_setlist,
 };
 use crate::output::output;
 use crate::setlist_sync::{
@@ -96,33 +96,69 @@ pub fn handle(cmd: SetlistsCommand) -> Result<()> {
             warn_if_running();
             let conn = open_readwrite()?;
             let sl = resolve_setlist(&conn, &setlist)?;
-            let sc = resolve_score(&conn, &score)?;
-            add_score_to_setlist(&conn, sl.id, sc.id)?;
 
-            // Get the UUID that was used (either reused or newly generated)
-            let identifier: String = conn
-                .query_row(
-                    "SELECT ZUUID FROM ZCYLON WHERE ZSETLIST = ? AND ZITEM = ?",
-                    [sl.id, sc.id],
-                    |row| row.get(0),
-                )
-                .unwrap_or_default();
+            // Try as score first, then as bookmark
+            if let Ok(sc) = resolve_score(&conn, &score) {
+                add_score_to_setlist(&conn, sl.id, sc.id)?;
 
-            let item = SetlistItem {
-                file_path: sc.path.clone(),
-                title: sc.title.clone(),
-                identifier,
-                is_bookmark: false,
-                first_page: None,
-                last_page: None,
-            };
-            match add_item_to_setlist_file(&sl.title, &item) {
-                Ok(true) => println!("Added '{}' to setlist '{}' + sync file", sc.title, sl.title),
-                Ok(false) => println!("Added '{}' to setlist '{}' (already in sync file)", sc.title, sl.title),
-                Err(e) => {
-                    println!("Added '{}' to setlist '{}' (database only)", sc.title, sl.title);
-                    eprintln!("Warning: Failed to update sync file: {}", e);
+                // Get the UUID that was used (either reused or newly generated)
+                let identifier: String = conn
+                    .query_row(
+                        "SELECT ZUUID FROM ZCYLON WHERE ZSETLIST = ? AND ZITEM = ?",
+                        [sl.id, sc.id],
+                        |row| row.get(0),
+                    )
+                    .unwrap_or_default();
+
+                let item = SetlistItem {
+                    file_path: sc.path.clone(),
+                    title: sc.title.clone(),
+                    identifier,
+                    is_bookmark: false,
+                    first_page: None,
+                    last_page: None,
+                };
+                match add_item_to_setlist_file(&sl.title, &item) {
+                    Ok(true) => println!("Added '{}' to setlist '{}' + sync file", sc.title, sl.title),
+                    Ok(false) => println!("Added '{}' to setlist '{}' (already in sync file)", sc.title, sl.title),
+                    Err(e) => {
+                        println!("Added '{}' to setlist '{}' (database only)", sc.title, sl.title);
+                        eprintln!("Warning: Failed to update sync file: {}", e);
+                    }
                 }
+            } else if let Ok(bm) = resolve_bookmark(&conn, &score) {
+                add_item_to_setlist(&conn, sl.id, bm.id, entity::BOOKMARK)?;
+
+                // Get the UUID that was used
+                let identifier: String = conn
+                    .query_row(
+                        "SELECT ZUUID FROM ZCYLON WHERE ZSETLIST = ? AND ZITEM = ?",
+                        [sl.id, bm.id],
+                        |row| row.get(0),
+                    )
+                    .unwrap_or_default();
+
+                let item = SetlistItem {
+                    file_path: bm.path.clone(),
+                    title: bm.title.clone(),
+                    identifier,
+                    is_bookmark: true,
+                    first_page: bm.start_page.map(|p| p as i64),
+                    last_page: bm.end_page.map(|p| p as i64),
+                };
+                match add_item_to_setlist_file(&sl.title, &item) {
+                    Ok(true) => println!("Added bookmark '{}' to setlist '{}' + sync file", bm.title, sl.title),
+                    Ok(false) => println!("Added bookmark '{}' to setlist '{}' (already in sync file)", bm.title, sl.title),
+                    Err(e) => {
+                        println!("Added bookmark '{}' to setlist '{}' (database only)", bm.title, sl.title);
+                        eprintln!("Warning: Failed to update sync file: {}", e);
+                    }
+                }
+            } else {
+                return Err(crate::error::ForScoreError::Other(format!(
+                    "Score or bookmark not found: {}",
+                    score
+                )));
             }
         }
 
@@ -130,25 +166,36 @@ pub fn handle(cmd: SetlistsCommand) -> Result<()> {
             warn_if_running();
             let conn = open_readwrite()?;
             let sl = resolve_setlist(&conn, &setlist)?;
-            let sc = resolve_score(&conn, &score)?;
+
+            // Try as score first, then as bookmark
+            let (item_id, item_title) = if let Ok(sc) = resolve_score(&conn, &score) {
+                (sc.id, sc.title)
+            } else if let Ok(bm) = resolve_bookmark(&conn, &score) {
+                (bm.id, bm.title)
+            } else {
+                return Err(crate::error::ForScoreError::Other(format!(
+                    "Score or bookmark not found: {}",
+                    score
+                )));
+            };
 
             // Get the UUID from ZCYLON before deleting (this is what's in the sync file)
             let identifier: String = conn
                 .query_row(
                     "SELECT ZUUID FROM ZCYLON WHERE ZSETLIST = ? AND ZITEM = ?",
-                    [sl.id, sc.id],
+                    [sl.id, item_id],
                     |row| row.get(0),
                 )
                 .unwrap_or_default();
 
-            remove_score_from_setlist(&conn, sl.id, sc.id)?;
+            remove_score_from_setlist(&conn, sl.id, item_id)?;
 
             // Update sync file
             match remove_item_from_setlist_file(&sl.title, &identifier) {
-                Ok(true) => println!("Removed '{}' from setlist '{}' + sync file", sc.title, sl.title),
-                Ok(false) => println!("Removed '{}' from setlist '{}' (not in sync file)", sc.title, sl.title),
+                Ok(true) => println!("Removed '{}' from setlist '{}' + sync file", item_title, sl.title),
+                Ok(false) => println!("Removed '{}' from setlist '{}' (not in sync file)", item_title, sl.title),
                 Err(e) => {
-                    println!("Removed '{}' from setlist '{}' (database only)", sc.title, sl.title);
+                    println!("Removed '{}' from setlist '{}' (database only)", item_title, sl.title);
                     eprintln!("Warning: Failed to update sync file: {}", e);
                 }
             }
@@ -162,45 +209,67 @@ pub fn handle(cmd: SetlistsCommand) -> Result<()> {
             warn_if_running();
             let conn = open_readwrite()?;
             let sl = resolve_setlist(&conn, &setlist)?;
-            let sc = resolve_score(&conn, &score)?;
-            reorder_score_in_setlist(&conn, sl.id, sc.id, position)?;
+
+            // Try as score first, then as bookmark
+            let (item_id, item_title) = if let Ok(sc) = resolve_score(&conn, &score) {
+                (sc.id, sc.title)
+            } else if let Ok(bm) = resolve_bookmark(&conn, &score) {
+                (bm.id, bm.title)
+            } else {
+                return Err(crate::error::ForScoreError::Other(format!(
+                    "Score or bookmark not found: {}",
+                    score
+                )));
+            };
+
+            reorder_score_in_setlist(&conn, sl.id, item_id, position)?;
 
             // Rebuild sync file with new order from database
-            // Query scores with their UUIDs from ZCYLON (the join table)
-            let scores = list_scores_in_setlist(&conn, sl.id)?;
-            let mut items: Vec<SetlistItem> = Vec::with_capacity(scores.len());
-            for s in &scores {
-                // Get UUID from ZCYLON - this is what's stored in sync files
-                let identifier: String = conn
-                    .query_row(
-                        "SELECT ZUUID FROM ZCYLON WHERE ZSETLIST = ? AND ZITEM = ?",
-                        [sl.id, s.id],
-                        |row| row.get(0),
-                    )
-                    .unwrap_or_default();
+            // Query items with their UUIDs and entity types from ZCYLON
+            let mut stmt = conn.prepare(
+                "SELECT c.ZITEM, c.ZUUID, c.Z4_ITEM, i.ZPATH, i.ZTITLE, i.ZSTARTPAGE, i.ZENDPAGE
+                 FROM ZCYLON c
+                 JOIN ZITEM i ON c.ZITEM = i.Z_PK
+                 WHERE c.ZSETLIST = ?
+                 ORDER BY c.Z_PK"
+            )?;
+            let mut items: Vec<SetlistItem> = Vec::new();
+            let rows = stmt.query_map([sl.id], |row| {
+                Ok((
+                    row.get::<_, String>(1)?,           // ZUUID
+                    row.get::<_, i32>(2)?,              // Z4_ITEM (entity type)
+                    row.get::<_, String>(3)?,           // ZPATH
+                    row.get::<_, String>(4)?,           // ZTITLE
+                    row.get::<_, Option<i32>>(5)?,      // ZSTARTPAGE
+                    row.get::<_, Option<i32>>(6)?,      // ZENDPAGE
+                ))
+            })?;
+            for row in rows {
+                let (identifier, entity_type, path, title, start_page, end_page) = row?;
+                let is_bookmark = entity_type == entity::BOOKMARK;
                 items.push(SetlistItem {
-                    file_path: s.path.clone(),
-                    title: s.title.clone(),
+                    file_path: path,
+                    title,
                     identifier,
-                    is_bookmark: false,
-                    first_page: None,
-                    last_page: None,
+                    is_bookmark,
+                    first_page: if is_bookmark { start_page.map(|p| p as i64) } else { None },
+                    last_page: if is_bookmark { end_page.map(|p| p as i64) } else { None },
                 });
             }
 
             match reorder_setlist_file(&sl.title, &items) {
                 Ok(true) => println!(
                     "Moved '{}' to position {} in '{}' + updated sync file",
-                    sc.title, position, sl.title
+                    item_title, position, sl.title
                 ),
                 Ok(false) => println!(
                     "Moved '{}' to position {} in '{}' (no sync file)",
-                    sc.title, position, sl.title
+                    item_title, position, sl.title
                 ),
                 Err(e) => {
                     println!(
                         "Moved '{}' to position {} in '{}' (database only)",
-                        sc.title, position, sl.title
+                        item_title, position, sl.title
                     );
                     eprintln!("Warning: Failed to update sync file: {}", e);
                 }

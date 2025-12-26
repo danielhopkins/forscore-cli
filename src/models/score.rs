@@ -532,3 +532,50 @@ pub fn get_bookmark_by_id(conn: &Connection, id: i64) -> Result<Bookmark> {
     bookmark.load_metadata(conn)?;
     Ok(bookmark)
 }
+
+/// Get a bookmark by title (exact match)
+pub fn get_bookmark_by_title(conn: &Connection, title: &str) -> Result<Bookmark> {
+    let mut stmt = conn.prepare(
+        "SELECT i.Z_PK, i.ZPATH, i.ZTITLE, i.ZUUID, i.ZSTARTPAGE, i.ZENDPAGE,
+                r.ZVALUE5 as rating_value, d.ZVALUE1 as difficulty_value, i.ZKEY
+         FROM ZITEM i
+         LEFT JOIN ZMETA r ON i.ZRATING = r.Z_PK
+         LEFT JOIN ZMETA d ON i.ZDIFFICULTY = d.Z_PK
+         WHERE i.ZTITLE = ? AND i.Z_ENT = ?",
+    )?;
+
+    let key_code: Option<i32> =
+        stmt.query_row(rusqlite::params![title, entity::BOOKMARK], |row| row.get("ZKEY"))?;
+
+    let mut bookmark = stmt.query_row(rusqlite::params![title, entity::BOOKMARK], |row| {
+        Ok(Bookmark {
+            id: row.get("Z_PK")?,
+            path: row.get("ZPATH")?,
+            title: row.get("ZTITLE")?,
+            uuid: row.get("ZUUID")?,
+            start_page: row.get("ZSTARTPAGE")?,
+            end_page: row.get("ZENDPAGE")?,
+            rating: row.get("rating_value")?,
+            difficulty: row.get("difficulty_value")?,
+            key: key_code.and_then(MusicalKey::from_code),
+            composers: Vec::new(),
+            genres: Vec::new(),
+        })
+    })?;
+
+    bookmark.load_metadata(conn)?;
+    Ok(bookmark)
+}
+
+/// Resolve a bookmark from various identifier formats (ID or title)
+pub fn resolve_bookmark(conn: &Connection, identifier: &str) -> Result<Bookmark> {
+    // Try as numeric ID first
+    if let Ok(id) = identifier.parse::<i64>() {
+        if let Ok(bookmark) = get_bookmark_by_id(conn, id) {
+            return Ok(bookmark);
+        }
+    }
+
+    // Try as title
+    get_bookmark_by_title(conn, identifier)
+}
