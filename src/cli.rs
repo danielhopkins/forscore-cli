@@ -415,7 +415,7 @@ pub enum BookmarksCommand {
 
 #[derive(Subcommand)]
 pub enum FixesCommand {
-    /// Find and remove duplicate bookmarks (keeps older, removes newer)
+    /// Find and remove duplicate bookmarks (checks both database and ITM sync files)
     DuplicateBookmarks {
         /// Actually delete the duplicates
         #[arg(long)]

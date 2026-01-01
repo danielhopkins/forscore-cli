@@ -33,7 +33,12 @@
       "Bash(brew update:*)",
       "Bash(cargo fix:*)",
       "Bash(cargo fmt:*)",
-      "Bash(./target/release/forscore fixes:*)"
+      "Bash(./target/release/forscore fixes:*)",
+      "Bash(./target/release/forscore scores search:*)",
+      "Bash(./target/release/forscore:*)",
+      "Bash(sqlite3:*)",
+      "Bash(gzip:*)",
+      "Bash(plutil:*)"
     ]
   }
 }
