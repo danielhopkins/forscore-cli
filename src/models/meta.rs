@@ -130,10 +130,10 @@ pub fn list_genres(conn: &Connection, unused_only: bool) -> Result<Vec<Genre>> {
 
 /// List all keywords (tags)
 pub fn list_keywords(conn: &Connection, unused_only: bool) -> Result<Vec<Keyword>> {
-    let sql = "SELECT m.Z_PK, m.ZVALUE,
+    let sql = "SELECT m.Z_PK, m.ZVALUE3,
                 (SELECT COUNT(*) FROM Z_4KEYWORDS k WHERE k.Z_13KEYWORDS = m.Z_PK) as score_count
          FROM ZMETA m WHERE m.Z_ENT = ?
-         ORDER BY m.ZVALUE";
+         ORDER BY m.ZVALUE3";
 
     let mut stmt = conn.prepare(sql)?;
 
@@ -141,7 +141,7 @@ pub fn list_keywords(conn: &Connection, unused_only: bool) -> Result<Vec<Keyword
         .query_map([entity::KEYWORD], |row| {
             Ok(Keyword {
                 id: row.get("Z_PK")?,
-                name: row.get::<_, Option<String>>("ZVALUE")?.unwrap_or_default(),
+                name: row.get::<_, Option<String>>("ZVALUE3")?.unwrap_or_default(),
                 score_count: row.get("score_count")?,
             })
         })?
