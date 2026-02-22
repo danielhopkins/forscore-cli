@@ -35,10 +35,7 @@ pub fn handle(cmd: FixesCommand) -> Result<()> {
 
             // Report database duplicates
             if has_db_dups {
-                println!(
-                    "Found {} duplicate(s) in database:\n",
-                    db_duplicates.len()
-                );
+                println!("Found {} duplicate(s) in database:\n", db_duplicates.len());
 
                 for dup in &db_duplicates {
                     println!(
@@ -88,7 +85,10 @@ pub fn handle(cmd: FixesCommand) -> Result<()> {
                         remove_itm_duplicates(&result.itm_path)?;
                         println!("  Fixed: {}", result.pdf_name);
                     }
-                    println!("\nRemoved duplicates from {} ITM file(s).", itm_results.len());
+                    println!(
+                        "\nRemoved duplicates from {} ITM file(s).",
+                        itm_results.len()
+                    );
                 }
             } else {
                 println!("Run with --apply to delete duplicates.");

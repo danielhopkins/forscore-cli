@@ -23,6 +23,9 @@ pub enum ForScoreError {
     #[error("Invalid key format: {0}. Use format like 'C Major', 'F# Minor', 'Bb Major'")]
     InvalidKey(String),
 
+    #[error("Invalid key code: {0}. Must be a positive integer in the format NMS (e.g., 110 for C Major, 311 for E Minor)")]
+    InvalidKeyCode(i32),
+
     #[error("Invalid rating: {0}. Must be 1-6")]
     InvalidRating(i32),
 

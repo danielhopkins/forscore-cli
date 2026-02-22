@@ -83,9 +83,9 @@ pub fn handle(cmd: ImportCommand) -> Result<()> {
                 if let Some(idx) = key_idx {
                     if let Some(key_str) = record.get(idx) {
                         if !key_str.is_empty() {
-                            if let Ok(key) = MusicalKey::from_string(key_str) {
+                            if let Ok(key) = MusicalKey::try_from(key_str) {
                                 if dry_run {
-                                    println!("  key = {}", key.display());
+                                    println!("  key = {key}");
                                 } else {
                                     conn.execute(
                                         "UPDATE ZITEM SET ZKEY = ? WHERE Z_PK = ?",
@@ -101,7 +101,7 @@ pub fn handle(cmd: ImportCommand) -> Result<()> {
                 if let Some(idx) = rating_idx {
                     if let Some(rating_str) = record.get(idx) {
                         if let Ok(rating) = rating_str.parse::<i32>() {
-                            if rating >= 1 && rating <= 6 {
+                            if (1..=6).contains(&rating) {
                                 if dry_run {
                                     println!("  rating = {}", rating);
                                 } else {
@@ -119,7 +119,7 @@ pub fn handle(cmd: ImportCommand) -> Result<()> {
                 if let Some(idx) = difficulty_idx {
                     if let Some(diff_str) = record.get(idx) {
                         if let Ok(diff) = diff_str.parse::<i32>() {
-                            if diff >= 1 && diff <= 5 {
+                            if (1..=5).contains(&diff) {
                                 if dry_run {
                                     println!("  difficulty = {}", diff);
                                 } else {

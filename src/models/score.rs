@@ -9,17 +9,29 @@ pub struct Score {
     pub id: i64,
     pub path: String,
     pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sort_title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub uuid: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub rating: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub difficulty: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub key: Option<MusicalKey>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bpm: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub start_page: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub end_page: Option<i32>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub composers: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub genres: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub keywords: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub labels: Vec<String>,
 }
 
@@ -34,7 +46,7 @@ impl Score {
             uuid: row.get("ZUUID")?,
             rating: row.get("rating_value")?,
             difficulty: row.get("difficulty_value")?,
-            key: key_code.and_then(MusicalKey::from_code),
+            key: key_code.and_then(|code| MusicalKey::try_from(code).ok()),
             bpm: row.get("ZBPM")?,
             start_page: row.get("ZSTARTPAGE")?,
             end_page: row.get("ZENDPAGE")?,
@@ -316,6 +328,7 @@ pub fn resolve_score(conn: &Connection, identifier: &str) -> Result<Score> {
 }
 
 /// Search scores with filters
+#[allow(clippy::too_many_arguments)]
 pub fn search_scores(
     conn: &Connection,
     query: Option<&str>,
@@ -365,20 +378,20 @@ pub fn search_scores(
 
     if let Some(c) = composer {
         conditions.push("mc.ZVALUE LIKE ?".to_string());
-        params.push(Box::new(format!("%{}%", c)));
+        params.push(Box::new(format!("%{c}%")));
     }
 
-    if genre.is_some() {
+    if let Some(g) = genre {
         joins.push(
             "JOIN Z_4GENRES g ON i.Z_PK = g.Z_4ITEMS4 JOIN ZMETA mg ON g.Z_12GENRES = mg.Z_PK",
         );
         conditions.push("mg.ZVALUE2 LIKE ?".to_string());
-        params.push(Box::new(format!("%{}%", genre.unwrap())));
+        params.push(Box::new(format!("%{g}%")));
     }
 
     if let Some(t) = title {
         conditions.push("i.ZTITLE LIKE ?".to_string());
-        params.push(Box::new(format!("%{}%", t)));
+        params.push(Box::new(format!("%{t}%")));
     }
 
     if let Some(k) = key {
@@ -445,7 +458,7 @@ pub fn list_bookmarks(conn: &Connection, score_id: i64) -> Result<Vec<Bookmark>>
                 end_page: row.get("ZENDPAGE")?,
                 rating: row.get("rating_value")?,
                 difficulty: row.get("difficulty_value")?,
-                key: key_code.and_then(MusicalKey::from_code),
+                key: key_code.and_then(|code| MusicalKey::try_from(code).ok()),
                 composers: Vec::new(),
                 genres: Vec::new(),
             })
@@ -523,7 +536,7 @@ pub fn get_bookmark_by_id(conn: &Connection, id: i64) -> Result<Bookmark> {
             end_page: row.get("ZENDPAGE")?,
             rating: row.get("rating_value")?,
             difficulty: row.get("difficulty_value")?,
-            key: key_code.and_then(MusicalKey::from_code),
+            key: key_code.and_then(|code| MusicalKey::try_from(code).ok()),
             composers: Vec::new(),
             genres: Vec::new(),
         })
@@ -544,8 +557,10 @@ pub fn get_bookmark_by_title(conn: &Connection, title: &str) -> Result<Bookmark>
          WHERE i.ZTITLE = ? AND i.Z_ENT = ?",
     )?;
 
-    let key_code: Option<i32> =
-        stmt.query_row(rusqlite::params![title, entity::BOOKMARK], |row| row.get("ZKEY"))?;
+    let key_code: Option<i32> = stmt
+        .query_row(rusqlite::params![title, entity::BOOKMARK], |row| {
+            row.get("ZKEY")
+        })?;
 
     let mut bookmark = stmt.query_row(rusqlite::params![title, entity::BOOKMARK], |row| {
         Ok(Bookmark {
@@ -557,7 +572,7 @@ pub fn get_bookmark_by_title(conn: &Connection, title: &str) -> Result<Bookmark>
             end_page: row.get("ZENDPAGE")?,
             rating: row.get("rating_value")?,
             difficulty: row.get("difficulty_value")?,
-            key: key_code.and_then(MusicalKey::from_code),
+            key: key_code.and_then(|code| MusicalKey::try_from(code).ok()),
             composers: Vec::new(),
             genres: Vec::new(),
         })

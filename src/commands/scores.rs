@@ -67,7 +67,7 @@ pub fn handle(cmd: ScoresCommand) -> Result<()> {
             let conn = open_readonly()?;
 
             let key_code = if let Some(k) = key {
-                Some(MusicalKey::from_string(&k)?.code)
+                Some(MusicalKey::try_from(k.as_str())?.code)
             } else {
                 None
             };
@@ -154,12 +154,12 @@ pub fn handle(cmd: ScoresCommand) -> Result<()> {
 
             // Update key
             if let Some(key_str) = &key {
-                let key_obj = MusicalKey::from_string(key_str)?;
+                let key_obj = MusicalKey::try_from(key_str.as_str())?;
                 if dry_run {
                     println!(
                         "  Key: {} -> {}",
-                        score.key.map(|k| k.display()).unwrap_or_default(),
-                        key_obj.display()
+                        score.key.map(|k| k.to_string()).unwrap_or_default(),
+                        key_obj
                     );
                 } else {
                     conn.execute(
@@ -171,7 +171,7 @@ pub fn handle(cmd: ScoresCommand) -> Result<()> {
 
             // Update rating
             if let Some(r) = rating {
-                if r < 1 || r > 6 {
+                if !(1..=6).contains(&r) {
                     return Err(crate::error::ForScoreError::InvalidRating(r));
                 }
                 if dry_run {
@@ -186,7 +186,7 @@ pub fn handle(cmd: ScoresCommand) -> Result<()> {
 
             // Update difficulty
             if let Some(d) = difficulty {
-                if d < 1 || d > 5 {
+                if !(1..=5).contains(&d) {
                     return Err(crate::error::ForScoreError::InvalidDifficulty(d));
                 }
                 if dry_run {
@@ -253,7 +253,7 @@ pub fn handle(cmd: ScoresCommand) -> Result<()> {
                 itm_update.composer = composer.clone();
                 itm_update.genre = genre.clone();
                 if let Some(key_str) = &key {
-                    if let Ok(key_obj) = MusicalKey::from_string(key_str) {
+                    if let Ok(key_obj) = MusicalKey::try_from(key_str.as_str()) {
                         itm_update.key = Some(key_obj.code as i64);
                     }
                 }

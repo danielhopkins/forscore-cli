@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 pub struct Setlist {
     pub id: i64,
     pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub uuid: Option<String>,
     pub score_count: i32,
 }
@@ -286,7 +287,9 @@ pub fn reorder_score_in_setlist(
         conn.prepare("SELECT Z_PK, ZITEM, Z4_ITEM FROM ZCYLON WHERE ZSETLIST = ? ORDER BY Z_PK")?;
 
     let members: Vec<(i64, i64, i32)> = stmt
-        .query_map([setlist_id], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?
+        .query_map([setlist_id], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })?
         .filter_map(|r| r.ok())
         .collect();
 
@@ -319,7 +322,13 @@ pub fn reorder_score_in_setlist(
         conn.execute(
             "INSERT INTO ZCYLON (Z_PK, Z_ENT, Z_OPT, ZSETLIST, ZITEM, Z4_ITEM, ZSHUFFLE, ZUUID)
              VALUES (?, 2, 1, ?, ?, ?, 0, ?)",
-            rusqlite::params![max_base + 1 + i as i64, setlist_id, item_id, entity_type, uuid],
+            rusqlite::params![
+                max_base + 1 + i as i64,
+                setlist_id,
+                item_id,
+                entity_type,
+                uuid
+            ],
         )?;
     }
 

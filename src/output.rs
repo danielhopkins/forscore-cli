@@ -25,7 +25,7 @@ pub fn output_score(score: &Score, json: bool) {
             println!("UUID:       {}", uuid);
         }
         if let Some(key) = &score.key {
-            println!("Key:        {}", key.display());
+            println!("Key:        {key}");
         }
         if let Some(rating) = score.rating {
             println!("Rating:     {} ({})", "★".repeat(rating as usize), rating);
@@ -93,7 +93,7 @@ impl ToTable for Score {
                 id: s.id,
                 title: truncate(&s.title, 40),
                 composer: truncate(&s.composers.first().cloned().unwrap_or_default(), 30),
-                key: s.key.as_ref().map(|k| k.display()).unwrap_or_default(),
+                key: s.key.as_ref().map(|k| k.to_string()).unwrap_or_default(),
                 rating: s.rating.map(|r| "★".repeat(r as usize)).unwrap_or_default(),
             })
             .collect();
