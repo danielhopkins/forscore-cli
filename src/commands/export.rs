@@ -37,7 +37,11 @@ pub fn handle(cmd: ExportCommand) -> Result<()> {
                     &score.title,
                     &score.composers.join("; "),
                     &score.genres.join("; "),
-                    &score.key.as_ref().map(|k| k.display()).unwrap_or_default(),
+                    &score
+                        .key
+                        .as_ref()
+                        .map(|k| k.to_string())
+                        .unwrap_or_default(),
                     &score.rating.map(|r| r.to_string()).unwrap_or_default(),
                     &score.difficulty.map(|d| d.to_string()).unwrap_or_default(),
                     &score.bpm.map(|b| b.to_string()).unwrap_or_default(),

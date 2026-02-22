@@ -8,8 +8,8 @@ use crate::models::setlist::{
 };
 use crate::output::output;
 use crate::setlist_sync::{
-    add_item_to_setlist_file, create_setlist_file, delete_setlist_file, remove_item_from_setlist_file,
-    rename_setlist_file, reorder_setlist_file, SetlistItem,
+    add_item_to_setlist_file, create_setlist_file, delete_setlist_file,
+    remove_item_from_setlist_file, rename_setlist_file, reorder_setlist_file, SetlistItem,
 };
 
 pub fn handle(cmd: SetlistsCommand) -> Result<()> {
@@ -44,10 +44,19 @@ pub fn handle(cmd: SetlistsCommand) -> Result<()> {
 
             // Create sync file
             match create_setlist_file(&name) {
-                Ok(true) => println!("Created setlist '{}' (ID: {}) + sync file", setlist.title, setlist.id),
-                Ok(false) => println!("Created setlist '{}' (ID: {}) (sync file exists)", setlist.title, setlist.id),
+                Ok(true) => println!(
+                    "Created setlist '{}' (ID: {}) + sync file",
+                    setlist.title, setlist.id
+                ),
+                Ok(false) => println!(
+                    "Created setlist '{}' (ID: {}) (sync file exists)",
+                    setlist.title, setlist.id
+                ),
                 Err(e) => {
-                    println!("Created setlist '{}' (ID: {}) (database only)", setlist.title, setlist.id);
+                    println!(
+                        "Created setlist '{}' (ID: {}) (database only)",
+                        setlist.title, setlist.id
+                    );
                     eprintln!("Warning: Failed to create sync file: {}", e);
                 }
             }
@@ -65,8 +74,14 @@ pub fn handle(cmd: SetlistsCommand) -> Result<()> {
 
             // Rename sync file
             match rename_setlist_file(&old_name, &new_name) {
-                Ok(true) => println!("Renamed '{}' to '{}' + updated sync file", old_name, new_name),
-                Ok(false) => println!("Renamed '{}' to '{}' (no sync file found)", old_name, new_name),
+                Ok(true) => println!(
+                    "Renamed '{}' to '{}' + updated sync file",
+                    old_name, new_name
+                ),
+                Ok(false) => println!(
+                    "Renamed '{}' to '{}' (no sync file found)",
+                    old_name, new_name
+                ),
                 Err(e) => {
                     println!("Renamed '{}' to '{}' (database only)", old_name, new_name);
                     eprintln!("Warning: Failed to update sync file: {}", e);
@@ -119,10 +134,18 @@ pub fn handle(cmd: SetlistsCommand) -> Result<()> {
                     last_page: None,
                 };
                 match add_item_to_setlist_file(&sl.title, &item) {
-                    Ok(true) => println!("Added '{}' to setlist '{}' + sync file", sc.title, sl.title),
-                    Ok(false) => println!("Added '{}' to setlist '{}' (already in sync file)", sc.title, sl.title),
+                    Ok(true) => {
+                        println!("Added '{}' to setlist '{}' + sync file", sc.title, sl.title)
+                    }
+                    Ok(false) => println!(
+                        "Added '{}' to setlist '{}' (already in sync file)",
+                        sc.title, sl.title
+                    ),
                     Err(e) => {
-                        println!("Added '{}' to setlist '{}' (database only)", sc.title, sl.title);
+                        println!(
+                            "Added '{}' to setlist '{}' (database only)",
+                            sc.title, sl.title
+                        );
                         eprintln!("Warning: Failed to update sync file: {}", e);
                     }
                 }
@@ -147,10 +170,19 @@ pub fn handle(cmd: SetlistsCommand) -> Result<()> {
                     last_page: bm.end_page.map(|p| p as i64),
                 };
                 match add_item_to_setlist_file(&sl.title, &item) {
-                    Ok(true) => println!("Added bookmark '{}' to setlist '{}' + sync file", bm.title, sl.title),
-                    Ok(false) => println!("Added bookmark '{}' to setlist '{}' (already in sync file)", bm.title, sl.title),
+                    Ok(true) => println!(
+                        "Added bookmark '{}' to setlist '{}' + sync file",
+                        bm.title, sl.title
+                    ),
+                    Ok(false) => println!(
+                        "Added bookmark '{}' to setlist '{}' (already in sync file)",
+                        bm.title, sl.title
+                    ),
                     Err(e) => {
-                        println!("Added bookmark '{}' to setlist '{}' (database only)", bm.title, sl.title);
+                        println!(
+                            "Added bookmark '{}' to setlist '{}' (database only)",
+                            bm.title, sl.title
+                        );
                         eprintln!("Warning: Failed to update sync file: {}", e);
                     }
                 }
@@ -192,10 +224,19 @@ pub fn handle(cmd: SetlistsCommand) -> Result<()> {
 
             // Update sync file
             match remove_item_from_setlist_file(&sl.title, &identifier) {
-                Ok(true) => println!("Removed '{}' from setlist '{}' + sync file", item_title, sl.title),
-                Ok(false) => println!("Removed '{}' from setlist '{}' (not in sync file)", item_title, sl.title),
+                Ok(true) => println!(
+                    "Removed '{}' from setlist '{}' + sync file",
+                    item_title, sl.title
+                ),
+                Ok(false) => println!(
+                    "Removed '{}' from setlist '{}' (not in sync file)",
+                    item_title, sl.title
+                ),
                 Err(e) => {
-                    println!("Removed '{}' from setlist '{}' (database only)", item_title, sl.title);
+                    println!(
+                        "Removed '{}' from setlist '{}' (database only)",
+                        item_title, sl.title
+                    );
                     eprintln!("Warning: Failed to update sync file: {}", e);
                 }
             }
@@ -231,17 +272,17 @@ pub fn handle(cmd: SetlistsCommand) -> Result<()> {
                  FROM ZCYLON c
                  JOIN ZITEM i ON c.ZITEM = i.Z_PK
                  WHERE c.ZSETLIST = ?
-                 ORDER BY c.Z_PK"
+                 ORDER BY c.Z_PK",
             )?;
             let mut items: Vec<SetlistItem> = Vec::new();
             let rows = stmt.query_map([sl.id], |row| {
                 Ok((
-                    row.get::<_, String>(1)?,           // ZUUID
-                    row.get::<_, i32>(2)?,              // Z4_ITEM (entity type)
-                    row.get::<_, String>(3)?,           // ZPATH
-                    row.get::<_, String>(4)?,           // ZTITLE
-                    row.get::<_, Option<i32>>(5)?,      // ZSTARTPAGE
-                    row.get::<_, Option<i32>>(6)?,      // ZENDPAGE
+                    row.get::<_, String>(1)?,      // ZUUID
+                    row.get::<_, i32>(2)?,         // Z4_ITEM (entity type)
+                    row.get::<_, String>(3)?,      // ZPATH
+                    row.get::<_, String>(4)?,      // ZTITLE
+                    row.get::<_, Option<i32>>(5)?, // ZSTARTPAGE
+                    row.get::<_, Option<i32>>(6)?, // ZENDPAGE
                 ))
             })?;
             for row in rows {
@@ -252,8 +293,16 @@ pub fn handle(cmd: SetlistsCommand) -> Result<()> {
                     title,
                     identifier,
                     is_bookmark,
-                    first_page: if is_bookmark { start_page.map(|p| p as i64) } else { None },
-                    last_page: if is_bookmark { end_page.map(|p| p as i64) } else { None },
+                    first_page: if is_bookmark {
+                        start_page.map(|p| p as i64)
+                    } else {
+                        None
+                    },
+                    last_page: if is_bookmark {
+                        end_page.map(|p| p as i64)
+                    } else {
+                        None
+                    },
                 });
             }
 

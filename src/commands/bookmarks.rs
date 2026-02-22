@@ -42,7 +42,7 @@ pub fn handle(cmd: BookmarksCommand) -> Result<()> {
                     }
                 }
                 if let Some(key) = &bookmark.key {
-                    println!("Key:        {}", key.display());
+                    println!("Key:        {key}");
                 }
                 if let Some(rating) = bookmark.rating {
                     println!("Rating:     {} ({})", "★".repeat(rating as usize), rating);
@@ -100,12 +100,12 @@ pub fn handle(cmd: BookmarksCommand) -> Result<()> {
 
             // Update key
             if let Some(key_str) = &key {
-                let key_obj = MusicalKey::from_string(key_str)?;
+                let key_obj = MusicalKey::try_from(key_str.as_str())?;
                 if dry_run {
                     println!(
                         "  Key: {} -> {}",
-                        bookmark.key.map(|k| k.display()).unwrap_or_default(),
-                        key_obj.display()
+                        bookmark.key.map(|k| k.to_string()).unwrap_or_default(),
+                        key_obj
                     );
                 } else {
                     conn.execute(
@@ -117,7 +117,7 @@ pub fn handle(cmd: BookmarksCommand) -> Result<()> {
 
             // Update rating
             if let Some(r) = rating {
-                if r < 1 || r > 6 {
+                if !(1..=6).contains(&r) {
                     return Err(crate::error::ForScoreError::InvalidRating(r));
                 }
                 if dry_run {
@@ -132,7 +132,7 @@ pub fn handle(cmd: BookmarksCommand) -> Result<()> {
 
             // Update difficulty
             if let Some(d) = difficulty {
-                if d < 1 || d > 5 {
+                if !(1..=5).contains(&d) {
                     return Err(crate::error::ForScoreError::InvalidDifficulty(d));
                 }
                 if dry_run {
@@ -206,7 +206,7 @@ pub fn handle(cmd: BookmarksCommand) -> Result<()> {
                 itm_update.composer = composer.clone();
                 itm_update.genre = genre.clone();
                 if let Some(key_str) = &key {
-                    if let Ok(key_obj) = MusicalKey::from_string(key_str) {
+                    if let Ok(key_obj) = MusicalKey::try_from(key_str.as_str()) {
                         itm_update.key = Some(key_obj.code as i64);
                     }
                 }
